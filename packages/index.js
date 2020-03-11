@@ -120,7 +120,6 @@ gameScene.create = function create() {
   window.shield = shield;
   window.background = background;
   mini_missile = this.physics.add.group();
-  this.physics.add.collider(player, mini_missile, hitMiniMissile, null, this);
 
   function hitMiniMissile(player, mini_missile) {
     shieldHit(); //Make the player immune to velocity change
@@ -185,13 +184,14 @@ gameScene.create = function create() {
   var downSpeed = 350;
   this.input.on('pointerdown', function () {
     if (!moving) {
-      //Calculate the ratio between the X and Y velocities.
+      this.physics.add.collider(player, mini_missile, hitMiniMissile, null, this); //Calculate the ratio between the X and Y velocities.
+
       player.setVelocity(Math.cos(angle) * downSpeed, Math.sin(angle) * downSpeed);
       moving = true;
     } else {
       player.setVelocity(player.body.velocity.x * downSpeed / upSpeed, player.body.velocity.y * downSpeed / upSpeed);
     }
-  });
+  }.bind(gameScene));
   this.input.on('pointerup', function () {
     player.setVelocity(player.body.velocity.x * upSpeed / downSpeed, player.body.velocity.y * upSpeed / downSpeed);
   });

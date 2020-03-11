@@ -36,8 +36,6 @@ gameScene.create = function create() {
 
 	mini_missile = this.physics.add.group();
 
-	this.physics.add.collider(player, mini_missile, hitMiniMissile, null, this);
-
 	function hitMiniMissile(player, mini_missile) {
 		shieldHit()
 		//Make the player immune to velocity change
@@ -103,8 +101,9 @@ gameScene.create = function create() {
 
 	let upSpeed = 140
 	let downSpeed = 350
-	this.input.on('pointerdown', function() {
+	this.input.on('pointerdown', (function() {
 		if (!moving) {
+			this.physics.add.collider(player, mini_missile, hitMiniMissile, null, this);
 			//Calculate the ratio between the X and Y velocities.
 			player.setVelocity(Math.cos(angle)*downSpeed, Math.sin(angle)*downSpeed)
 			moving = true
@@ -112,7 +111,7 @@ gameScene.create = function create() {
 		else {
 			player.setVelocity(player.body.velocity.x * downSpeed/upSpeed, player.body.velocity.y * downSpeed/upSpeed)
 		}
-	})
+	}).bind(gameScene))
 
 	this.input.on('pointerup', function() {
 		player.setVelocity(player.body.velocity.x * upSpeed/downSpeed, player.body.velocity.y * upSpeed/downSpeed)
