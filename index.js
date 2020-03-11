@@ -34,17 +34,47 @@ gameScene.create = function create() {
 	window.shield = shield
 	window.background = background
 
+	mini_missile = this.physics.add.group();
+
+	this.physics.add.collider(player, mini_missile, hitMiniMissile, null, this);
+
+	function hitMiniMissile(player, mini_missile) {
+		shieldHit()
+		//Make the player immune to velocity change
+		player.body.velocity.x = player.body.newVelocity.x * 60
+		player.body.velocity.y = player.body.newVelocity.y * 60
+
+		//TODO: Fancy explosion...
+		mini_missile.destroy()
+	}
+
+	for (let i=0;i<10;i++) {
+	var bomb = mini_missile.create(600, 600, 'mini-missile');
+	bomb.setBounce(1);
+	bomb.setScale(0.3)
+	bomb.body.mass = 1
+	bomb.setCollideWorldBounds(true);
+	bomb.setVelocity(Phaser.Math.Between(-200, 200), Phaser.Math.Between(-200, 200));
+}
+
+	let repeats;
+	let timer;
+
 	let shieldHit = (function shieldHit() {
 		//We will flash the sheild color to indicate a hit.
+
+		repeats = 32
+		if (timer) {return;} //We don't want multiple async writes at once. Just reset the count and leave.
+
 		let originalShieldTint = shield.tint
 		let originalShieldAlpha = shield.alpha
 
-		let repeats = 32
-		let timer = this.time.addEvent({
+		timer = this.time.addEvent({
 		    delay: 16,
 		    callback: () => {
 				if (repeats === 0) {
 					timer.remove()
+					timer = undefined
 					shield.tint = originalShieldTint
 					shield.alpha = originalShieldAlpha
 					return
