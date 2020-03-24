@@ -734,46 +734,12 @@ module.exports = function (METHOD_NAME, options) {
 /* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(78);
-
-__webpack_require__(80);
-
-__webpack_require__(81);
-
-__webpack_require__(82);
-
-__webpack_require__(83);
-
-__webpack_require__(74);
-
-__webpack_require__(59);
-
-__webpack_require__(66);
-
-__webpack_require__(67);
-
-__webpack_require__(93);
-
-__webpack_require__(94);
-
-__webpack_require__(96);
-
-__webpack_require__(98);
-
-__webpack_require__(100);
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
 //A few notes for what we will be doing here:
 //We will handle everything on a frame by frame basis, in order to make sure the same thing happens every time.
 //We should also make sure that state is completely saved, so that the levels can be replayed and resumed.
 var Phaser = __webpack_require__(69);
+
+var Shield = __webpack_require__(102);
 
 var gameScene = new Phaser.Scene("Game");
 
@@ -785,21 +751,6 @@ gameScene.preload = function preload() {
   this.load.image('shield', 'assets/energy-shield.png');
   this.load.image('mini-missile', 'assets/projectiles/mini-missile.svg');
 };
-
-function createShieldFlexValues(steps) {
-  var maxFlex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.1;
-  //Creates the scale ratios for flexing shields on hit.
-  //TODO: Allow multiple flexes
-  steps--;
-  var arr = [];
-
-  for (var i = 0; i <= steps; i++) {
-    var value = 1 + maxFlex * Math.sin(i / steps * Math.PI * 2);
-    arr.push(value);
-  }
-
-  return arr;
-}
 /*function Shield(gameScene, spriteToFollow, assetName = "shield", scaleRatio = 1, originalAlpha = 1, originalTint = 0xFFFFFF) {
 	let obj = {
 		scaleRatio, originalAlpha, originalTint
@@ -841,161 +792,8 @@ function createShieldFlexValues(steps) {
 	obj.show = function() {}
 	return obj
 }*/
+//Easily add and remove listeners to update callback.
 
-
-function Shield(scene) {
-  var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-  if (!config.spriteToFollow) {
-    throw "config.spriteToFollow was not provided. ";
-  }
-
-  this.spriteToFollow = config.spriteToFollow;
-
-  if (!scene) {
-    throw "scene was not provided. ";
-  }
-
-  if (!config.assetName) {
-    throw "config.assetName was not provided. ";
-  }
-
-  this.alpha = config.alpha || 1;
-  this.tint = config.tint || 0xFFFFFF;
-  this.scaleRatioX = config.scaleRatioX || config.scaleRatio || 1;
-  this.scaleRatioY = config.scaleRatioY || config.scaleRatio || 1; //Initial Prep
-
-  this.shield = scene.physics.add.sprite(this.spriteToFollow.x, this.spriteToFollow.y, config.assetName);
-  this.shield.body.setCircle(true); //Not tested or used... But should probably be done.
-
-  this.shield.tint = this.tint;
-  this.shield.alpha = this.alpha;
-  this.shield.setScale(this.spriteToFollow.scaleX * this.scaleRatioX, this.spriteToFollow.scaleY * this.scaleRatioY); //Hold state even if multiple things are happening
-
-  this.modifiers = {
-    hidden: false,
-    modifierArray: [] //Holds an object for each frame in the future that is modified. Each frame processed, the first element in modifierArray will be discarded.
-
-  };
-
-  this.frameCallback = function () {
-    var _currentModifiers$tin, _currentModifiers$alp;
-
-    //Manage the shield. Called on every frame.
-    var currentModifiers = this.modifiers.modifierArray.shift() || {};
-
-    if (currentModifiers.hide) {
-      this.hide();
-    } //Hide the animation at this point.
-
-
-    if (this.modifiers.hidden) {
-      this.shield.scale = 0;
-      return;
-    }
-
-    this.shield.x = this.spriteToFollow.x;
-    this.shield.y = this.spriteToFollow.y;
-    this.shield.alpha = this.alpha;
-    this.shield.tint = this.tint;
-    this.shield.scaleX = this.spriteToFollow.scaleX * this.scaleRatioX;
-    this.shield.scaleY = this.spriteToFollow.scaleY * this.scaleRatioY;
-
-    if (!currentModifiers) {
-      return;
-    } //Nothing is modified from normal.
-
-
-    if (currentModifiers.scaleX !== undefined) {
-      this.shield.scaleX = this.spriteToFollow.scaleX * currentModifiers.scaleX * this.scaleRatioX;
-    }
-
-    if (currentModifiers.scaleY !== undefined) {
-      this.shield.scaleY = this.spriteToFollow.scaleY * currentModifiers.scaleY * this.scaleRatioY;
-    }
-
-    this.shield.tint = (_currentModifiers$tin = currentModifiers.tint) !== null && _currentModifiers$tin !== void 0 ? _currentModifiers$tin : this.tint;
-    this.shield.alpha = (_currentModifiers$alp = currentModifiers.alpha) !== null && _currentModifiers$alp !== void 0 ? _currentModifiers$alp : this.alpha;
-  }.bind(this); //TODO: The current animations will overwrite each other if called in such a way that they collide.
-  //This could lead to a jump in the animation.
-
-
-  this.hitAnimation = function (frames) {
-    var startFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-
-    if (!(frames > 0)) {
-      throw "Frame count required. ";
-    }
-
-    var flexValues1 = createShieldFlexValues(frames, 0.15);
-    var flexValues2 = flexValues1.slice(0).reverse();
-
-    for (var i = 0; i < frames; i++) {
-      var modifiers = this.modifiers.modifierArray[startFrame + i] || {};
-      modifiers.alpha = Math.random();
-      modifiers.scaleX = flexValues1[i];
-      modifiers.scaleY = flexValues2[i];
-      this.modifiers.modifierArray[startFrame + i] = modifiers;
-    }
-  };
-
-  this.reactivateAnimation = function (frames) {
-    var startFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    var reverse = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-    if (!(frames > 0)) {
-      throw "Frame count required. ";
-    }
-
-    var flexValues1 = createShieldFlexValues(frames, 0.1);
-    var flexValues2 = flexValues1.slice(0).reverse(); //We will flex while going from min to max size.
-
-    flexValues1 = flexValues1.map(function (value, index) {
-      return (index + 1) / frames * value;
-    });
-    flexValues2 = flexValues2.map(function (value, index) {
-      return (index + 1) / frames * value;
-    });
-
-    for (var i = 0; i < frames; i++) {
-      var modifiers = this.modifiers.modifierArray[startFrame + i] || {};
-      modifiers.alpha = (i + 1) / frames;
-      modifiers.scaleX = flexValues1[i];
-      modifiers.scaleY = flexValues2[i];
-      this.modifiers.modifierArray[i + startFrame] = modifiers;
-    } //Make sure the shield is showing.
-
-
-    if (reverse) {
-      var _this$modifiers$modif;
-
-      //TODO: The time complexity here is awful. Optimized should be O(n)
-      var toReverse = this.modifiers.modifierArray.slice(startFrame, frames);
-
-      (_this$modifiers$modif = this.modifiers.modifierArray).splice.apply(_this$modifiers$modif, [startFrame, frames].concat(_toConsumableArray(toReverse.reverse())));
-    } else {
-      this.unhide();
-    }
-  };
-
-  this.collapseAnimation = function (frames) {
-    var startFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    //reactivateAnimation in reverse.
-    this.reactivateAnimation(frames, startFrame, true); //Hide at the end.
-
-    this.modifiers.modifierArray[startFrame + frames - 1].hide = true;
-  };
-
-  this.hide = function () {
-    this.modifiers.hidden = true;
-  };
-
-  this.unhide = function () {
-    this.modifiers.hidden = false;
-  };
-}
-
-window.Shield = Shield; //Easily add and remove listeners to update callback.
 
 function UpdateCallback() {
   var obj = {};
@@ -3243,6 +3041,215 @@ module.exports = {
   TouchList: 0
 };
 
+
+/***/ }),
+/* 102 */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(78);
+
+__webpack_require__(80);
+
+__webpack_require__(81);
+
+__webpack_require__(82);
+
+__webpack_require__(83);
+
+__webpack_require__(74);
+
+__webpack_require__(59);
+
+__webpack_require__(66);
+
+__webpack_require__(67);
+
+__webpack_require__(93);
+
+__webpack_require__(94);
+
+__webpack_require__(96);
+
+__webpack_require__(98);
+
+__webpack_require__(100);
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+function createShieldFlexValues(steps) {
+  var maxFlex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.1;
+  //Creates the scale ratios for flexing shields on hit.
+  //TODO: Allow multiple flexes
+  steps--;
+  var arr = [];
+
+  for (var i = 0; i <= steps; i++) {
+    var value = 1 + maxFlex * Math.sin(i / steps * Math.PI * 2);
+    arr.push(value);
+  }
+
+  return arr;
+}
+
+function Shield(scene) {
+  var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  if (!config.spriteToFollow) {
+    throw "config.spriteToFollow was not provided. ";
+  }
+
+  this.spriteToFollow = config.spriteToFollow;
+
+  if (!scene) {
+    throw "scene was not provided. ";
+  }
+
+  if (!config.assetName) {
+    throw "config.assetName was not provided. ";
+  }
+
+  this.alpha = config.alpha || 1;
+  this.tint = config.tint || 0xFFFFFF;
+  this.scaleRatioX = config.scaleRatioX || config.scaleRatio || 1;
+  this.scaleRatioY = config.scaleRatioY || config.scaleRatio || 1; //Initial Prep
+
+  this.shield = scene.physics.add.sprite(this.spriteToFollow.x, this.spriteToFollow.y, config.assetName);
+  this.shield.body.setCircle(true); //Not tested or used... But should probably be done.
+
+  this.shield.tint = this.tint;
+  this.shield.alpha = this.alpha;
+  this.shield.setScale(this.spriteToFollow.scaleX * this.scaleRatioX, this.spriteToFollow.scaleY * this.scaleRatioY); //Hold state even if multiple things are happening
+
+  this.modifiers = {
+    hidden: false,
+    modifierArray: [] //Holds an object for each frame in the future that is modified. Each frame processed, the first element in modifierArray will be discarded.
+
+  };
+
+  this.frameCallback = function () {
+    var _currentModifiers$tin, _currentModifiers$alp;
+
+    //Manage the shield. Called on every frame.
+    var currentModifiers = this.modifiers.modifierArray.shift() || {};
+
+    if (currentModifiers.hide) {
+      this.hide();
+    } //Hide the animation at this point.
+
+
+    if (this.modifiers.hidden) {
+      this.shield.scale = 0;
+      return;
+    }
+
+    this.shield.x = this.spriteToFollow.x;
+    this.shield.y = this.spriteToFollow.y;
+    this.shield.alpha = this.alpha;
+    this.shield.tint = this.tint;
+    this.shield.scaleX = this.spriteToFollow.scaleX * this.scaleRatioX;
+    this.shield.scaleY = this.spriteToFollow.scaleY * this.scaleRatioY;
+
+    if (!currentModifiers) {
+      return;
+    } //Nothing is modified from normal.
+
+
+    if (currentModifiers.scaleX !== undefined) {
+      this.shield.scaleX = this.spriteToFollow.scaleX * currentModifiers.scaleX * this.scaleRatioX;
+    }
+
+    if (currentModifiers.scaleY !== undefined) {
+      this.shield.scaleY = this.spriteToFollow.scaleY * currentModifiers.scaleY * this.scaleRatioY;
+    }
+
+    this.shield.tint = (_currentModifiers$tin = currentModifiers.tint) !== null && _currentModifiers$tin !== void 0 ? _currentModifiers$tin : this.tint;
+    this.shield.alpha = (_currentModifiers$alp = currentModifiers.alpha) !== null && _currentModifiers$alp !== void 0 ? _currentModifiers$alp : this.alpha;
+  }.bind(this); //TODO: The current animations will overwrite each other if called in such a way that they collide.
+  //This could lead to a jump in the animation.
+
+
+  this.hitAnimation = function (frames) {
+    var startFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+    if (!(frames > 0)) {
+      throw "Frame count required. ";
+    }
+
+    var flexValues1 = createShieldFlexValues(frames, 0.15);
+    var flexValues2 = flexValues1.slice(0).reverse();
+
+    for (var i = 0; i < frames; i++) {
+      var modifiers = this.modifiers.modifierArray[startFrame + i] || {};
+      modifiers.alpha = Math.random();
+      modifiers.scaleX = flexValues1[i];
+      modifiers.scaleY = flexValues2[i];
+      this.modifiers.modifierArray[startFrame + i] = modifiers;
+    }
+  };
+
+  this.reactivateAnimation = function (frames) {
+    var startFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    var reverse = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+    if (!(frames > 0)) {
+      throw "Frame count required. ";
+    }
+
+    var flexValues1 = createShieldFlexValues(frames, 0.1);
+    var flexValues2 = flexValues1.slice(0).reverse(); //We will flex while going from min to max size.
+
+    flexValues1 = flexValues1.map(function (value, index) {
+      return (index + 1) / frames * value;
+    });
+    flexValues2 = flexValues2.map(function (value, index) {
+      return (index + 1) / frames * value;
+    });
+
+    for (var i = 0; i < frames; i++) {
+      var modifiers = this.modifiers.modifierArray[startFrame + i] || {};
+      modifiers.alpha = (i + 1) / frames;
+      modifiers.scaleX = flexValues1[i];
+      modifiers.scaleY = flexValues2[i];
+      this.modifiers.modifierArray[startFrame + i] = modifiers;
+    } //Make sure the shield is showing.
+
+
+    if (reverse) {
+      var _this$modifiers$modif;
+
+      //TODO: The time complexity here is awful. Optimized should be O(n)
+      var toReverse = this.modifiers.modifierArray.slice(startFrame, startFrame + frames);
+
+      (_this$modifiers$modif = this.modifiers.modifierArray).splice.apply(_this$modifiers$modif, [startFrame, frames].concat(_toConsumableArray(toReverse.reverse())));
+    } else {
+      this.unhide();
+    }
+  };
+
+  this.collapseAnimation = function (frames) {
+    var startFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    //reactivateAnimation in reverse.
+    this.reactivateAnimation(frames, startFrame, true); //Hide at the end.
+
+    this.modifiers.modifierArray[startFrame + frames - 1].hide = true;
+  };
+
+  this.hide = function () {
+    this.modifiers.hidden = true;
+  };
+
+  this.unhide = function () {
+    this.modifiers.hidden = false;
+  };
+}
+
+module.exports = Shield;
 
 /***/ })
 /******/ ]);
