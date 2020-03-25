@@ -5,6 +5,9 @@
 
 const Phaser = require("./node_modules/phaser/dist/phaser.min.js")
 const Shield = require("./Shield.js")
+const MultipleCallback = require("./MultipleCallback.js")
+
+
 
 let gameScene = new Phaser.Scene("Game")
 
@@ -21,72 +24,42 @@ gameScene.preload = function preload() {
 
 
 
-/*function Shield(gameScene, spriteToFollow, assetName = "shield", scaleRatio = 1, originalAlpha = 1, originalTint = 0xFFFFFF) {
-	let obj = {
-		scaleRatio, originalAlpha, originalTint
+
+function Player(scene, config = {}) {
+
+	if (!scene) {
+		throw "scene was not provided. "
 	}
 
-	let shield = gameScene.physics.add.sprite(spriteToFollow.x, spriteToFollow.y, assetName)
-	shield.alpha = obj.originalAlpha
-	shield.tint = obj.originalTint
-
-	obj.shield = shield
-	obj.frameCallback = function() {
-		//This will be called every frame.
-		shield.x = spriteToFollow.x
-		shield.y = spriteToFollow.y
-		shield.scale = spriteToFollow.scale * scaleRatio
+	if (!config.assetName) {
+		throw "config.assetName was not provided. "
 	}
 
-	obj.hitAnimationDuration = 0
-	obj.runHitAnimation = function(frameDuration) {
-		//Choose the largest duration
-		hitAnimationDuration = Math.max(frameDuration, obj.hitAnimationDuration)
+	this.alpha = config.alpha || 1
+	this.tint = config.tint || 0xFFFFFF
+	this.scaleX = config.scaleX || 1
+	this.scaleY = config.scaleY || 1
+
+	//Initial Prep
+	this.player = scene.physics.add.sprite(config.startX || 0, config.startY || 0, config.assetName)
+	//TODO: Figure out how to set the player body for collisions.
+	this.player.tint = this.tint
+	this.player.alpha = this.alpha
+	this.player.setScale(this.scaleX, this.scaleY)
+
+	//Hold state even if multiple things are happening
+	this.modifiers = {
+		hidden: false,
+		modifierArray: [] //Holds an object for each frame in the future that is modified. Each frame processed, the first element in modifierArray will be discarded.
 	}
 
-	obj._processHitAnimation = function() {
-		if (obj.hitAnimationDuration <= 0) {
-			//Reset
-			return
-		}
-		//We can flicker tint, alpha, and flex scale a bit on this.
-	}
-
-	obj.setTint = function() {
-
-	}
-	obj.setAlpha = function() {
-
-	}
-	obj.hide = function() {}
-	obj.show = function() {}
-	return obj
-}*/
+	this.frameCallback = (function() {}).bind(this)
 
 
+	this.explodeAnimation = function() {
 
-
-
-
-//Easily add and remove listeners to update callback.
-function UpdateCallback() {
-	let obj = {}
-	obj.updateCallbacks = {}
-	obj.count = 0
-	obj.addUpdateCallback = function(callback) {
-		obj.updateCallbacks[count] = callback
-		return count++
-	}
-	obj.removeUpdateCallback = function(id) {
-		delete obj.updateCallbacks[id]
-	}
-	obj.updateCallback = function() {
-		for (let prop in obj.updateCallbacks) {
-			obj.updateCallbacks[prop]()
-		}
 	}
 }
-
 
 
 
@@ -158,10 +131,7 @@ gameScene.create = function create() {
 		player.setVelocity(player.body.velocity.x * upSpeed/downSpeed, player.body.velocity.y * upSpeed/downSpeed)
 	})
 
-
-	gameScene.update = function update() {
-		/*shield.x = player.x
-		shield.y = player.y*/
+	function update() {
 
 		if (!moving) {
 			//Point towards the mouse.
@@ -179,8 +149,13 @@ gameScene.create = function create() {
 		player.setCollideWorldBounds(true);
 
 		shield.frameCallback()
-
 	}
+
+	let updateCallback = new MultipleCallback()
+	updateCallback.addCallback(update)
+	updateCallback.addCallback(shield.frameCallback)
+	window.updateCallback = updateCallback
+	gameScene.update = updateCallback.callback
 }
 
 

@@ -82,7 +82,7 @@ function Shield(scene, config = {}) {
 
 	//TODO: The current animations will overwrite each other if called in such a way that they collide.
 	//This could lead to a jump in the animation.
-	this.hitAnimation = function(frames, startFrame = 0) {
+	this.hitAnimation = (function(frames, startFrame = 0) {
 		if (!(frames>0)) {throw "Frame count required. "}
 
 		let flexValues1 = createShieldFlexValues(frames, 0.15)
@@ -95,9 +95,9 @@ function Shield(scene, config = {}) {
 			modifiers.scaleY = flexValues2[i]
 			this.modifiers.modifierArray[startFrame + i] = modifiers
 		}
-	}
+	}).bind(this)
 
-	this.reactivateAnimation = function(frames, startFrame = 0, reverse = false) {
+	this.reactivateAnimation = (function(frames, startFrame = 0, reverse = false) {
 		if (!(frames>0)) {throw "Frame count required. "}
 
 		let flexValues1 = createShieldFlexValues(frames, 0.1)
@@ -121,22 +121,22 @@ function Shield(scene, config = {}) {
 			this.modifiers.modifierArray.splice(startFrame, frames, ...toReverse.reverse())
 		}
 		else {this.unhide()}
-	}
+	}).bind(this)
 
-	this.collapseAnimation = function(frames, startFrame = 0) {
+	this.collapseAnimation = (function(frames, startFrame = 0) {
 		//reactivateAnimation in reverse.
 		this.reactivateAnimation(frames, startFrame, true)
 		//Hide at the end.
 		this.modifiers.modifierArray[startFrame + frames - 1].hide = true
-	}
+	}).bind(this)
 
-	this.hide = function() {
+	this.hide = (function() {
 		this.modifiers.hidden = true
-	}
+	}).bind(this)
 
-	this.unhide = function() {
+	this.unhide = (function() {
 		this.modifiers.hidden = false
-	}
+	}).bind(this)
 }
 
 module.exports = Shield
